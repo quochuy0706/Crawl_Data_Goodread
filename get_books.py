@@ -4,11 +4,28 @@ import json
 import os
 import re
 import time
+import re
 
 from urllib.request import urlopen
 from urllib.error import HTTPError
 import bs4
 import pandas as pd
+
+def search_box(search_key:str,  start_page:int, end_page:int)
+    key = search_key.replace(" ","+")
+    book_list = []
+    for i in range(start_page, end_page+1):
+        url = f'https://www.goodreads.com/search?page={i}&q={key}'
+        source = urlopen(url)
+        soup = bs4.BeautifulSoup(source, 'html.parser')
+        for line in soup.find_all('a', class_='bookTitle'):
+            a = re.findall("[^[/]+\?",line.get('href'))
+            book_list.append(a[0])
+    with open('book_list.txt', 'w') as f:
+        for line in book_list:
+            f.write(line)
+            f.write('\n')
+    return book_list
 
 
 def get_all_lists(soup):
