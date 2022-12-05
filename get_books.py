@@ -2,7 +2,6 @@ import argparse
 from datetime import datetime
 import json
 import os
-import re
 import time
 import re
 
@@ -11,7 +10,7 @@ from urllib.error import HTTPError
 import bs4
 import pandas as pd
 
-def search_box(search_key:str,  start_page:int, end_page:int)
+def search_box(search_key,  start_page, end_page):
     key = search_key.replace(" ","+")
     book_list = []
     for i in range(start_page, end_page+1):
@@ -20,7 +19,7 @@ def search_box(search_key:str,  start_page:int, end_page:int)
         soup = bs4.BeautifulSoup(source, 'html.parser')
         for line in soup.find_all('a', class_='bookTitle'):
             a = re.findall("[^[/]+\?",line.get('href'))
-            book_list.append(a[0])
+            book_list.append(a[0].replace("?",""))
     with open('book_list.txt', 'w') as f:
         for line in book_list:
             f.write(line)
@@ -215,25 +214,28 @@ def main():
     script_name = os.path.basename(__file__)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--book_ids_path', type=str)
+    parser.add_argument('--topic_search', type=str)
+    parser.add_argument('--start_page', type=int)
+    parser.add_argument('--end_page', type=int)
     parser.add_argument('--output_directory_path', type=str)
     parser.add_argument('--format', type=str, action="store", default="json",
                         dest="format", choices=["json", "csv"],
                         help="set file output format")
     args = parser.parse_args()
 
-    book_ids = [line.strip() for line in open(args.book_ids_path, 'r') if line.strip()]
+    book_list = search_box(args.topic_search,args.start_page,args.end_page)
+
     books_already_scraped = [file_name.replace('_book-metadata.json', '') for file_name in
                              os.listdir(args.output_directory_path) if
                              file_name.endswith('.json') and not file_name.startswith('all_books')]
-    books_to_scrape = [book_id for book_id in book_ids if book_id not in books_already_scraped]
+    books_to_scrape = [book_id for book_id in book_list if book_id not in books_already_scraped]
     condensed_books_path = args.output_directory_path + '/all_books'
 
     for i, book_id in enumerate(books_to_scrape):
         try:
             print(str(datetime.now()) + ' ' + script_name + ': Scraping ' + book_id + '...')
             print(str(datetime.now()) + ' ' + script_name + ': #' + str(
-                i + 1 + len(books_already_scraped)) + ' out of ' + str(len(book_ids)) + ' books')
+                i + 1 + len(books_already_scraped)) + ' out of ' + str(len(book_list)) + ' books')
 
             book = scrape_book(book_id)
             # Add book metadata to file name to be more specific
