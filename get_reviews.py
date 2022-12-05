@@ -25,6 +25,21 @@ RATING_STARS_DICT = {'it was amazing': 5,
                      'did not like it': 1,
                      '': None}
 
+def search_box(search_key,  start_page, end_page):
+    key = search_key.replace(" ","+")
+    book_list = []
+    for i in range(start_page, end_page+1):
+        url = f'https://www.goodreads.com/search?page={i}&q={key}'
+        source = urlopen(url)
+        soup = bs4.BeautifulSoup(source, 'html.parser')
+        for line in soup.find_all('a', class_='bookTitle'):
+            a = re.findall("[^[/]+\?",line.get('href'))
+            book_list.append(a[0].replace("?",""))
+    with open('book_list.txt', 'w') as f:
+        for line in book_list:
+            f.write(line)
+            f.write('\n')
+    return book_list
 
 def switch_reviews_mode(driver, book_id, sort_order, rating=None):
     """
@@ -251,7 +266,9 @@ def main():
     script_name = os.path.basename(__file__)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--book_ids_path', type=str)
+    parser.add_argument('--topic_search', type=str)
+    parser.add_argument('--start_page', type=int)
+    parser.add_argument('--end_page', type=int)
     parser.add_argument('--output_directory_path', type=str)
     parser.add_argument('--browser', type=str, help="choose a browser")
     parser.add_argument('--rating_filter', default=None, type=int)
@@ -261,16 +278,14 @@ def main():
                         help="set file output format")
 
     args = parser.parse_args()
-
-    if not args.book_ids_path:
-        parser.error("\n\nPlease add the --book_ids_path flag and choose a filepath that contains Goodreads book IDs\n")
     if not args.output_directory_path:
         parser.error(
             "\n\nPlease add the --output_directory_path and choose a directory filepath to output your reviews\n")
     if not args.browser:
         parser.error("\n\nPlease add the --browser flag and choose a browser: either Firefox or Chrome\n")
 
-    book_ids = [line.strip() for line in open(args.book_ids_path, 'r') if line.strip()]
+    book_ids = search_box(args.topic_search,args.start_page,args.end_page)
+
     books_already_scraped = [file_name.replace('_reviews.json', '') for file_name in
                              os.listdir(args.output_directory_path) if
                              file_name.endswith('.json') and not file_name.startswith(
