@@ -18,8 +18,14 @@ In addition, I developed an [**EDA_Data_science_books.ipynb**](https://github.co
 
 # Technical Requirement 
 
-
-
+You will need the following to perform these functions:
+- Python 3
+- Python libraries:
+  - Beautiful Soup 4
+  - Selenium
+  - Pandas
+  - Webdriver_manager
+  - Re (Regex)
 
 # Instruction
 
